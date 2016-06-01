@@ -4,8 +4,9 @@
 #E-Mail  ：zhoumanman888@126.com
 #版    本: 2016-5-31
 #授    权：在使用时请保留此段文字说明
-#
-#
+#*******************************
+
+#项目来源说明
 该项目是我在学习了邵发C++课程之后，自己做的一个综合项目。
 本项目是在osapi类库、json库的基础上开发的。
 其中osapi是邵发对线程、socket、锁、信号量等简单封装的跨平台（windows、linux）的类库，在项目开发的过程中
@@ -25,6 +26,9 @@ vs2008只能用版本1.0.0以下的版本，xcode倒是支持最新版本。所�
     a.多文件同时上传，开了5个线程，每个线程单独开一个socket（需分配单独的端口）下载一个文件， 当下载完成后
     ， 需要自动开始剩余文件的下载， 所以这里需要一个消息队列， 用于提供给线程文件名字。（功能已经实现）
     b.断点续传，这种情况主要是client在传输中突然掉线，这时候server端的该文件指针应该还没有关闭（如果已经关闭，则可以读取当前文件的大小，以app－and方式打开文件），此时client如果再次重现请求上传该文件，这时候server可以返回当前位置给client。所以这里需要client在开始的时候，先发送一个“开始”的请求包，确定文件从哪里开始传输。（该功能尚实现）。
+    c.服务端在6000端口上监听广播消息， 当收到广播消息后回应客户端［FileServer］；
+    客户端发送［FileClient］的广播消息，然后开启线程接收回应，每次接收到回应，则把peer的ip和port添加到列表
+    中。   （这里广播相关行为可以封装成一个类）
 #2》文件数据包格式分析：
     通信协议的整个net包划分2个部分：
     －－－－－－－－－－－－－－－－－－－－－－
@@ -92,10 +96,10 @@ vs2008只能用版本1.0.0以下的版本，xcode倒是支持最新版本。所�
    
 
 #4》对广播对象行为的设计：
-   ZBroadcastServer bs(broadcastPort);
-   bs.regeditRecieve(...);// 接收到客户端的回调函数
-   bs.start();
-
-   ZBroadcastClient bc(broadcastPort);
-   bc.regeditRecieve(...); // 接收到服务端回应的回调函数
-   bc.start();
+    ZBroadcastServer bs(broadcastPort);
+    bs.regeditRecieve(...);// 接收到客户端的回调函数
+    bs.start();
+    
+    ZBroadcastClient bc(broadcastPort);
+    bc.regeditRecieve(...); // 接收到服务端回应的回调函数
+    bc.start();
