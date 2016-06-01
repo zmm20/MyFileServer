@@ -9,6 +9,67 @@
 #include <stdlib.h>
 #include <sys/time.h> 
 
+// add by 周满满
+// mac os 平台下， 替代linux的sem_timedwait函数
+#ifdef __APPLE__
+#include <pthread.h>
+#include <errno.h>
+#include <mach/clock.h>
+#include <mach/mach.h>
+struct CSGX__sem_timedwait_Info
+{
+    pthread_mutex_t MxMutex;
+    pthread_cond_t MxCondition;
+    pthread_t MxParent;
+    struct timespec MxTimeout;
+    bool MxSignaled;
+};
+
+void *CSGX__sem_timedwait_Child(void *MainPtr)
+{
+    CSGX__sem_timedwait_Info *TempInfo = (CSGX__sem_timedwait_Info *)MainPtr;
+    
+    pthread_mutex_lock(&TempInfo->MxMutex);
+    
+    // Wait until the timeout or the condition is signaled, whichever comes first.
+    int Result;
+    do
+    {
+        Result = pthread_cond_timedwait(&TempInfo->MxCondition, &TempInfo->MxMutex, &TempInfo->MxTimeout);
+        if (!Result)  break;
+    }
+    while (1);
+    
+    if (errno == ETIMEDOUT && !TempInfo->MxSignaled)
+    {
+        TempInfo->MxSignaled = true;
+        pthread_kill(TempInfo->MxParent, SIGALRM);
+    }
+    
+    pthread_mutex_unlock(&TempInfo->MxMutex);
+    
+    return NULL;
+}
+
+int CSGX__ClockGetTimeRealtime(struct timespec *ts)
+{
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    
+    if (host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock) != KERN_SUCCESS)
+        return -1;
+    if (clock_get_time(cclock, &mts) != KERN_SUCCESS)  return -1;
+    if (mach_port_deallocate(mach_task_self(), cclock) != KERN_SUCCESS)
+        return -1;
+    
+    ts->tv_sec = mts.tv_sec;
+    ts->tv_nsec = mts.tv_nsec;
+    
+    return 0;
+}
+#endif //__APPLE__
+
+
 struct OS_Semaphore_Priv
 {
 	sem_t hSem;
@@ -76,10 +137,17 @@ int OS_Semaphore::Wait(int ms)
 	ts.tv_sec += ns / 1000000000;
 	ts.tv_sec += ms / 1000;
 
-	if(sem_timedwait(&priv->hSem, &ts) != 0)
-	{
-		return -1;
-	}
+#ifdef __APPLE__
+    CSGX__sem_timedwait_Info sem_tiem_info;
+    sem_tiem_info.MxTimeout = ts;
+    CSGX__sem_timedwait_Child(&sem_tiem_info);
+#else
+    if(sem_timedwait(&priv->hSem, &ts) != 0)
+    {
+        return -1;
+    }
+#endif
+	
 
 	return 0;;
 }
@@ -91,7 +159,6 @@ void OS_Semaphore::Post()
 
 	sem_post(&priv->hSem);
 }
-
 #endif // ! _WIN32
 
 

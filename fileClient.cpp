@@ -107,7 +107,11 @@ int ZSendFileThread::Routine()
 		n = m_sock.RecvFrom(buf, DATAMAX, recvAddr);
 		if (n < 0)
 		{
+#ifdef _WIN32
 			printf("error: %d\n", WSAGetLastError());
+#else
+            printf("error: %d\n", errno);
+#endif
 			break;
 		}
 		else
