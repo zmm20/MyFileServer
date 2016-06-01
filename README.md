@@ -1,6 +1,6 @@
 # MyFileServer
 # 版权说明：
-    //***跨Windows/Linux平台文件传输服务*****/
+    //***跨Windows/Linux平台文件传输模块*****/
     //作    者：周满满
     //E-Mail  ：zhoumanman888@126.com
     //版    本: 2016-5-31
