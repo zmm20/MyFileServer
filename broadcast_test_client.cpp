@@ -11,14 +11,14 @@
 #include <string.h>
 #include "broadcast.h"
 
-void OnRecieved(OS_UdpSocket& sender, std::string ip, int port, const char* buf);
+void OnRecieved(OS_UdpSocket& sender, std::string ip, int port, const char* buf, void* userData);
 
 int main(int argc, const char * argv[]) {
     // insert code here...
     std::cout << "port 9888!\n";
     
     ZBroadcast* bc = new ZBroadcastClient(9888);
-    bc->regeditRecieve(OnRecieved);
+    bc->regeditRecieve(OnRecieved, NULL);
     bc->start();
     
     std::string msg = "[FileClient]";
@@ -36,7 +36,7 @@ int main(int argc, const char * argv[]) {
     return 0;
 }
 
-void OnRecieved(OS_UdpSocket& sender, std::string ip, int port, const char* buf)
+void OnRecieved(OS_UdpSocket& sender, std::string ip, int port, const char* buf, void* userData)
 {
     if (strcmp(buf, "[FileServer]") == 0)
     {

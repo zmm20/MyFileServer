@@ -11,7 +11,7 @@
 #include "osapi/socket.h"
 #include "osapi/thread.h"
 
-typedef void (*FOnRecieved)(OS_UdpSocket& sender, std::string ip, int port, const char* buf);
+typedef void (*FOnRecieved)(OS_UdpSocket& sender, std::string ip, int port, const char* buf, void* userData);
 
 class ZBroadcast : public OS_Thread
 {
@@ -20,19 +20,23 @@ protected:
     int m_selfPort;
     FOnRecieved m_onRecieved;
     OS_UdpSocket m_socket;
+
+    void* m_userData;// 由用户传入， 再经回调函数原样返回
 public:
     ZBroadcast(int selfPort)
         : OS_Thread(), m_selfPort(selfPort)
         , m_onRecieved(NULL), m_end(false){}
     ~ZBroadcast(){}
     
-    void regeditRecieve(FOnRecieved onRecieved)
+    void regeditRecieve(FOnRecieved onRecieved, void* userData)
     {
         m_onRecieved = onRecieved;
+        m_userData = userData;
     }
     
     int start()
     {
+        m_end = false;
         OS_SockAddr local(m_selfPort);
         int ret = m_socket.Open(local, true);
         
@@ -84,7 +88,7 @@ private:
             {
                 if (m_onRecieved)
                 {
-                    m_onRecieved(m_socket, recievedAddr.GetIp_str(), recievedAddr.GetPort(), buf);
+                    m_onRecieved(m_socket, recievedAddr.GetIp_str(), recievedAddr.GetPort(), buf, m_userData);
                 }
             }
         }
@@ -123,7 +127,7 @@ private:
             {
                 if (m_onRecieved)
                 {
-                    m_onRecieved(m_socket, recievedAddr.GetIp_str(), recievedAddr.GetPort(), buf);
+                    m_onRecieved(m_socket, recievedAddr.GetIp_str(), recievedAddr.GetPort(), buf, m_userData);
                 }
             }
         }

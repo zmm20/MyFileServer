@@ -27,6 +27,7 @@ protected:
     MapName_File m_mapNameFile;
 public:
     ZFileServer(int port) : m_selfPort(port), m_uploadPath(""){}
+    virtual ~ZFileServer(){}
     
     void setPath(std::string path)
     {

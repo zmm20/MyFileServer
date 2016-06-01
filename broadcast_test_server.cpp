@@ -1,34 +1,44 @@
 //
 //  main.cpp
-//  broadcast
+//  UDP_HostB
 //
-//  Created by 周满满 on 5/28/16.
+//  Created by 周满满 on 5/19/16.
 //  Copyright © 2016 周满满. All rights reserved.
 //
-// 接收端 端如下：
-#include <iostream>
-#include <stdio.h>
-#include "osapi/socket.h"
-#include "broadcast.h"
-#include <string>
 
-void OnRecieved(OS_UdpSocket& sender, std::string ip, int port, const char* buf);
+#include <iostream>
+#include "filePackage.h"
+#include <time.h>
+#include "fileServer.h"
+#include "broadcast.h"
+
+using namespace std;
+
+void OnRecieved(OS_UdpSocket& sender, std::string ip, int port, const char* buf, void* userData);
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "open broadcast port 6000!"<<std::endl;
-    
     ZBroadcast* bs = new ZBroadcastServer(6000);
-    bs->regeditRecieve(OnRecieved);
+    bs->regeditRecieve(OnRecieved, NULL);
     bs->start();
     
-    getchar();
+    printf("接收方: port=9000 ...\n");
+    
+    ZFileServer* fs = new ZUDPFileServer(9000);
+    fs->setPath("/Users/zmm/Downloads/");
+    
+    unsigned long elapse = time(NULL);
+    fs->start();
+    elapse = time(NULL) - elapse;
+    printf("接收完成！elapsed time = %ld\n", elapse);
+    
+    delete fs;
     bs->end();
     delete bs;
-    
+
     return 0;
 }
 
-void OnRecieved(OS_UdpSocket& sender, std::string ip, int port, const char* buf)
+
+void OnRecieved(OS_UdpSocket& sender, std::string ip, int port, const char* buf, void* userData)
 {
     if (strcmp(buf, "[FileClient]") == 0)
     {
