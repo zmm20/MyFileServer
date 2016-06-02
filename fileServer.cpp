@@ -25,26 +25,29 @@ void ZUDPFileServer::start()
     unsigned char buf[BUFSIZE];
     OS_SockAddr peer; // 对方的地址
     
+    int ret;
     int iSucceed = 0;
     std::string strTemp;
     std::string errStr;
     while(1)
     {
         memset(buf, 0, BUFSIZE);
-        int n = m_sock.RecvFrom(buf, BUFSIZE, peer);
-        if(n <= 0)
+        ret = m_sock.RecvFrom(buf, BUFSIZE, peer);
+        if(ret == -1)
         {
+            printf("RecvFrom error\n");
             continue;
         }
         
         ZFilePackage pkg;
-        pkg.UnSerialize(buf, n);
+        pkg.UnSerialize(buf, ret);
         
         // 1表示传输结束
         if (pkg.code == 1)
         {
             MapName_File::iterator iFind = m_mapNameFile.find(pkg.filename);
             FILE* fp = iFind->second;
+            printf("end %s\n", iFind->first.c_str());
             fclose(fp);
             m_mapNameFile.erase(iFind);
             
@@ -54,7 +57,7 @@ void ZUDPFileServer::start()
         if (pkg.currentpos == 0)
         {
             strTemp = m_uploadPath + pkg.filename;
-            printf("%s\n", strTemp.c_str());
+            printf("recieve begin: %s\n", pkg.filename.c_str());
             
             FILE* fp = fopen(strTemp.c_str(), "wb");
             if (fp == NULL)
@@ -83,7 +86,12 @@ void ZUDPFileServer::start()
         pkg.datalength = 0;
         pkg.data = NULL;
         pkg.Serialize();
-        m_sock.SendTo(pkg.GetBuffer(), pkg.GetSize(), peer); // 响应客户端
+        ret  = m_sock.SendTo(pkg.GetBuffer(), pkg.GetSize(), peer); // 响应客户端
+        if(ret == -1)
+        {
+            printf("RecvFrom error\n");
+            continue;
+        }
     }
 }
 
