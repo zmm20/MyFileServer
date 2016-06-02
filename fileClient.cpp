@@ -72,7 +72,7 @@ int ZSendFileThread::Routine()
 			if (1.0 * (pkg.currentpos - trackProgree) / fileLength * 100 > 1.0
 				|| pkg.currentpos == fileLength)
 			{// 当完成大于1%时候才调用一次进度，否则太频繁了
-				m_pFileClient->OnProgress(filename, fileLength, pkg.currentpos);
+				m_pFileClient->OnProgress(filename, fileLength, pkg.currentpos, m_userData);
 				trackProgree = pkg.currentpos;
 			}
 			

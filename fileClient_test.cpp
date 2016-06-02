@@ -7,7 +7,7 @@
 #include "fileClient.h"
 
 
-void OnProgress(const std::string filename, unsigned long long filelength, unsigned long long currentPossion);
+void OnProgress(const std::string filename, unsigned long long filelength, unsigned long long currentPossion, void* userData);
 int main()
 {
 	printf("·¢ËÍ·½: port=9001 ...\n");
@@ -15,7 +15,7 @@ int main()
 	std::string fileList[2] = {"Everything.exe", "Everything.rar"};
 	ZFileClient* fc = new ZUDPFileClient(9001);
 	fc->setFileList(fileList, 2);
-	fc->regeditProgress(OnProgress);
+	fc->regeditProgress(OnProgress, NULL);
 	fc->connect("192.168.1.101", 9000);
 
 	printf("please enter return key to start");
@@ -26,7 +26,7 @@ int main()
 	return 0;
 }
 int x = 25, y;
-void OnProgress(const std::string filename, unsigned long long filelength, unsigned long long currentPossion)
+void OnProgress(const std::string filename, unsigned long long filelength, unsigned long long currentPossion, void* userData)
 {
 	static bool bFirst = true;
 	if (bFirst)

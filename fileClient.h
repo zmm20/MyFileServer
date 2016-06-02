@@ -39,11 +39,13 @@ public:
 
 class ZFileClient
 {
-	typedef void (*FOnProgress)(const std::string filename, unsigned long long filelength, unsigned long long currentPossion);
+	typedef void (*FOnProgress)(const std::string filename, unsigned long long filelength, unsigned long long currentPossion, void* userData);
 protected:
 	int m_selfPort;
 	OS_SockAddr m_peerAddr;
 	MsgQueue m_queFileURI;
+
+	void* m_userData;
 public:
 	FOnProgress OnProgress;
 public:
@@ -59,9 +61,10 @@ public:
 		}
 		
 	}
-	void regeditProgress(FOnProgress fun_onProgress)
+	void regeditProgress(FOnProgress fun_onProgress, void userData)
 	{
 		OnProgress = fun_onProgress;
+		m_userData = userData;
 	}
 	virtual bool connect(std::string peer_ip, int peer_port) = 0;
 	virtual void upload() = 0;
