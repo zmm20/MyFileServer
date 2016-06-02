@@ -44,10 +44,9 @@ protected:
 	int m_selfPort;
 	OS_SockAddr m_peerAddr;
 	MsgQueue m_queFileURI;
-
-	void* m_userData;
 public:
 	FOnProgress OnProgress;
+	void* m_userData;
 public:
 	ZFileClient(int port) : m_selfPort(port), m_queFileURI(100), OnProgress(NULL)
 	{
@@ -61,7 +60,7 @@ public:
 		}
 		
 	}
-	void regeditProgress(FOnProgress fun_onProgress, void userData)
+	void regeditProgress(FOnProgress fun_onProgress, void* userData)
 	{
 		OnProgress = fun_onProgress;
 		m_userData = userData;

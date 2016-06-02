@@ -54,7 +54,7 @@ void ZUDPFileServer::start()
         if (pkg.currentpos == 0)
         {
             strTemp = m_uploadPath + pkg.filename;
-            printf("%s", strTemp.c_str());
+            printf("%s\n", strTemp.c_str());
             
             FILE* fp = fopen(strTemp.c_str(), "wb");
             if (fp == NULL)
