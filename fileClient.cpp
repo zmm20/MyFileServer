@@ -1,18 +1,11 @@
 #include "fileClient.h"
+#ifdef _WIN32
+	#define SocketErrNo WSAGetLastError()
+#else
+	#define SocketErrNo errno
+#endif
 
-
-ZSendFileThread::ZSendFileThread(ZFileClient* pFileClient, MsgQueue& quefileURI, int port, OS_SockAddr& peer)
-	: m_pFileClient(pFileClient), m_quefileURI(quefileURI), m_peerAddr(peer)
-{
-	OS_SockAddr local(port);// 默认地址：0.0.0.0
-	m_sock.Open(local, true);
-}
-
-ZSendFileThread::~ZSendFileThread()
-{
-	m_sock.Close();
-}
-
+OS_SockAddr ZSendFileThread::PeerAddr;
 std::string ZSendFileThread::getFileName(std::string fileURI)
 {
 	for (int i = fileURI.length() - 1; i >=0; --i)
@@ -25,6 +18,7 @@ std::string ZSendFileThread::getFileName(std::string fileURI)
 	}
 	return fileURI;
 }
+
 int ZSendFileThread::Routine()
 {
 	bool bFirst = true;
@@ -41,7 +35,7 @@ int ZSendFileThread::Routine()
 	int rt;
 	unsigned long long trackProgree = 0;
 	OS_SockAddr recvAddr;
-	while(1)
+    while(!m_bEnd)
 	{
 		if (bFirst)
 		{
@@ -84,8 +78,17 @@ int ZSendFileThread::Routine()
 			pkg.code = 1;
 			pkg.datalength = 0;
 			pkg.Serialize();
-			m_sock.SendTo(pkg.GetBuffer(), pkg.GetSize(), m_peerAddr);
+            rt = m_sock.SendTo(pkg.GetBuffer(), pkg.GetSize(), PeerAddr);
+            if (rt == -1)
+		    {
+				printf("SendTo error: %d\n", SocketErrNo);
+		        fclose(pFile);
+		        pFile = NULL;
+		        break;
+		    }
+            
 			fclose(pFile);
+            pFile = NULL;
 
 			// 开始下一个文件
 			bFirst = true;
@@ -102,16 +105,19 @@ int ZSendFileThread::Routine()
 
 		// 发送
 		pkg.Serialize();
-		m_sock.SendTo(pkg.GetBuffer(), pkg.GetSize(), m_peerAddr);
+        rt = m_sock.SendTo(pkg.GetBuffer(), pkg.GetSize(), PeerAddr);
+        if (rt == -1)
+        {
+			printf("SendTo error: %d\n", SocketErrNo);
+            fclose(pFile);
+            pFile = NULL;
+            break;
+        }
 
-		n = m_sock.RecvFrom(buf, DATAMAX, recvAddr);
-		if (n < 0)
+        n = m_sock.RecvFrom(buf, DATAMAX, recvAddr);
+        if (n == -1)
 		{
-#ifdef _WIN32
-			printf("error: %d\n", WSAGetLastError());
-#else
-            printf("error: %d\n", errno);
-#endif
+			printf("RecvFrom error: %d\n", SocketErrNo);
 			break;
 		}
 		else
@@ -119,6 +125,7 @@ int ZSendFileThread::Routine()
 			if (pkg.UnSerialize(buf, n) && pkg.code == -1)
 			{// 说明当前上传文件发生错误
 				fclose(pFile);
+                pFile = NULL;
 
 				bFirst = true; // 开始新的文件上传
 				printf("error code = %d, msg = %s\n", pkg.code, pkg.msg.c_str());
@@ -127,7 +134,10 @@ int ZSendFileThread::Routine()
 		}
 		
 	}
-	
+
+    if (pFile)
+        fclose(pFile);
+
 	return 0;
 }
 
@@ -136,7 +146,7 @@ ZUDPFileClient::ZUDPFileClient(int port) : ZFileClient(port)
 {
 	for (int i = 0; i < 5; ++i)
 	{// 准备5个线程对象
-		ZSendFileThread* sendThread = new ZSendFileThread(this, m_queFileURI, port + i, m_peerAddr);
+        ZSendFileThread* sendThread = new ZSendFileThread(this, m_queFileURI, port + i);
 		m_vecSendTread.push_back(sendThread);
 	}
 }
@@ -145,14 +155,17 @@ ZUDPFileClient::~ZUDPFileClient()
 	ZSendFileThread* sendThread;
 	for (int i = 0; i < 5; ++i)
 	{
-		sendThread = m_vecSendTread[0];
-		OS_Thread::Join(sendThread);
+        sendThread = m_vecSendTread[i];
+        delete sendThread;
 	}
+    m_vecSendTread.clear();
 }
 
 bool ZUDPFileClient::connect(std::string peer_ip, int peer_port)
 {
 	m_peerAddr = OS_SockAddr(peer_ip.c_str(), peer_port);
+    ZSendFileThread::PeerAddr = m_peerAddr;
+
 	return true;
 }
 void ZUDPFileClient::upload()
@@ -166,9 +179,15 @@ void ZUDPFileClient::upload()
 	{
 		sendThread = m_vecSendTread[i];
 
-		sendThread->Run();
+        sendThread->start();
 	}
 }
 void ZUDPFileClient::stop()
 {
+    ZSendFileThread* sendThread;
+    for (int i = 0; i < 5; ++i)
+    {
+        sendThread = m_vecSendTread[i];
+        sendThread->end();
+    }
 }

@@ -22,18 +22,38 @@ typedef AfMsgQueue<std::string>  MsgQueue;
 // ZSendFileThread定义
 class ZSendFileThread : public OS_Thread
 {
+    bool m_bEnd;
 	OS_UdpSocket m_sock;
+    OS_SockAddr m_selfAddr;
 
 	// 下面3个变量都是从其他地方传进来的
 	ZFileClient* m_pFileClient;
 	MsgQueue& m_quefileURI;
-	OS_SockAddr& m_peerAddr;
 private:
 	std::string getFileName(std::string fileURI);
 	int Routine();
 public:
-	ZSendFileThread(ZFileClient* pFileClient, MsgQueue& quefileURI, int port, OS_SockAddr& peer);
-	~ZSendFileThread();
+    static OS_SockAddr PeerAddr;
+public:
+    ZSendFileThread(ZFileClient* pFileClient, MsgQueue& quefileURI, int port)
+        : m_pFileClient(pFileClient), m_quefileURI(quefileURI), m_selfAddr(port)
+    {
+    }
+    ~ZSendFileThread(){}
+    void start()
+    {
+        m_bEnd = false;
+        m_sock.Open(m_selfAddr, true);
+        Run();
+    }
+
+    void end()
+    {
+        m_bEnd = true;
+        m_sock.Close();
+
+        OS_Thread::Join(this);
+    }
 };
 
 
@@ -51,6 +71,7 @@ public:
 	ZFileClient(int port) : m_selfPort(port), m_queFileURI(100), OnProgress(NULL)
 	{
 	}
+    virtual ~ZFileClient(){}
 
 	void setFileList(std::string fileURIList[], int nCount)
 	{
