@@ -11,10 +11,9 @@
 #include "osapi/socket.h"
 #include "osapi/thread.h"
 
-typedef void (*FOnRecieved)(OS_UdpSocket& sender, std::string ip, int port, const char* buf, void* userData);
-
 class ZBroadcast : public OS_Thread
 {
+    typedef void (*FOnRecieved)(OS_UdpSocket& sender, std::string ip, int port, const char* buf, void* userData);
 protected:
     bool m_end;
     int m_selfPort;
