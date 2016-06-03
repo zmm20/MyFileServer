@@ -8,13 +8,13 @@ public:
 	OS_Thread();
 	virtual ~OS_Thread();
 
-	// ´´½¨²¢Æô¶¯
+	// åˆ›å»ºå¹¶å¯åŠ¨
 	virtual int Run();
 
-	// µÈ´ıºÍÊÕ»Ø×ÊÔ´
+	// ç­‰å¾…å’Œæ”¶å›èµ„æº
 	static void Join(OS_Thread* thrd);
 
-	// Sleepº¯Êı
+	// Sleepå‡½æ•°
 	static void Msleep(int ms);
 	static void Sleep(int s);
 

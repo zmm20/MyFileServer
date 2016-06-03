@@ -48,13 +48,13 @@ static unsigned int WINAPI OS_Thread_Proc_Win32_3(void* param)
 
 int OS_Thread::Run()
 {
-	// 创建私有结构
+	// 鍒涘缓绉佹湁缁撴瀯
 	OS_Thread_Priv* priv = new OS_Thread_Priv;
 	if(!priv) return -1;
 
 	m_Priv = priv;
 
-	// 创建线程
+	// 鍒涘缓绾跨▼
 // 	DWORD nTheadId;
 // 	priv->hThread = _beginthreadex(NULL, NULL, OS_Thread_Proc_Win32, this,  0, &nTheadId);
 // 	priv->hThread = (HANDLE) _beginthread(OS_Thread_Proc_Win32, 0, this);
@@ -77,7 +77,7 @@ void OS_Thread::Join(OS_Thread* thrd)
 	{
 		WaitForSingleObject(priv->hThread, INFINITE);
 // 		CloseHandle(priv->hThread);
-		// 删除资源
+		// 鍒犻櫎璧勬簮
 		delete priv;
 		thrd->m_Priv = NULL;
 	}

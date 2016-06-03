@@ -35,13 +35,13 @@ static void* OS_Thread_Proc_Linux(void* param)
 
 int OS_Thread::Run()
 {
-	// 创建私有结构
+	// 鍒涘缓绉佹湁缁撴瀯
 	OS_Thread_Priv* priv = new OS_Thread_Priv;
 	if(!priv) return -1;
 
 	m_Priv = priv;
 
-	// 创建线程
+	// 鍒涘缓绾跨▼
 	if(pthread_create(&priv->hThread, NULL, OS_Thread_Proc_Linux, this) < 0)
 	{
 		delete priv;
@@ -59,7 +59,7 @@ void OS_Thread::Join(OS_Thread* thrd)
 	{
 		pthread_join(priv->hThread, NULL);
 
-		// 删除资源
+		// 鍒犻櫎璧勬簮
 		delete priv;
 		thrd->m_Priv = NULL;
 	}
@@ -68,7 +68,7 @@ void OS_Thread::Join(OS_Thread* thrd)
 void OS_Thread::Msleep(int ms)
 {
 	//::usleep(ms * 1000);
-	// 好像使用nanosleep更好
+	// 濂藉儚浣跨敤nanosleep鏇村ソ
 
 	timespec ts;
 	ts.tv_sec = ms / 1000;

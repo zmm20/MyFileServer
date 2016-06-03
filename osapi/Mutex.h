@@ -15,7 +15,7 @@ public:
 	void Unlock();
 
 private:
-	int Init(); // ´´½¨
+	int Init(); // åˆ›å»º
 
 private:
 	void* m_Priv;

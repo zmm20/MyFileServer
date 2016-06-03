@@ -2,7 +2,7 @@
 #include "Socket.h"
 #include <stdio.h>
 
-/* WindowsÏÂÊ¹ÓÃSocket»¹ÒªÏÈ³õÊ¼»¯Ò»ÏÂ*/
+/* Windowsä¸‹ä½¿ç”¨Socketè¿˜è¦å…ˆåˆå§‹åŒ–ä¸€ä¸‹*/
 #ifdef _WIN32
 #pragma comment(lib,"ws2_32")
 
@@ -29,7 +29,7 @@ static OS_SocketInit socket_init_win32;
 
 #endif
 
-/* IPµØÖ·µÄ·â×° */
+/* IPåœ°å€çš„å°è£… */
 OS_SockAddr::OS_SockAddr()
 {
 	iAddr.sin_family = AF_INET;
@@ -89,7 +89,7 @@ unsigned short OS_SockAddr::GetPort() const
 }
 
 
-/* socketÏà¹ØµÄ¹¤¾ßº¯Êı */
+/* socketç›¸å…³çš„å·¥å…·å‡½æ•° */
 OS_Socket::OS_Socket()
 :hSock(-1)
 {
@@ -266,7 +266,7 @@ int OS_Socket::Ioctl_SetBlockedIo(bool blocked)
 	 return 0;
  }
 
-// ·µ»ØÖµ: >0£¬±íÊ¾¿ÉÒÔ¶Á»òĞ´ =0±íÊ¾³¬Ê±£¬<0±íÊ¾socket²»¿ÉÓÃ
+// è¿”å›å€¼: >0ï¼Œè¡¨ç¤ºå¯ä»¥è¯»æˆ–å†™ =0è¡¨ç¤ºè¶…æ—¶ï¼Œ<0è¡¨ç¤ºsocketä¸å¯ç”¨
 int OS_Socket::Select_ForReading(int timeout)
 {
 	timeval tm;
@@ -274,8 +274,8 @@ int OS_Socket::Select_ForReading(int timeout)
 	tm.tv_usec = timeout % 1000;
 
 	fd_set fds;
-	FD_ZERO(&fds); // Çå¿Õ¼¯ºÏ
-	FD_SET(hSock, &fds); // ¼ÓÈë¼¯ºÏ
+	FD_ZERO(&fds); // æ¸…ç©ºé›†åˆ
+	FD_SET(hSock, &fds); // åŠ å…¥é›†åˆ
 
 	return  select(hSock+1, &fds, NULL, NULL, &tm);
 }
@@ -287,8 +287,8 @@ int OS_Socket::Select_ForWriting(int timeout)
 	tm.tv_usec = timeout % 1000;
 
 	fd_set fds;
-	FD_ZERO(&fds); // Çå¿Õ¼¯ºÏ
-	FD_SET(hSock, &fds); // ¼ÓÈë¼¯ºÏ
+	FD_ZERO(&fds); // æ¸…ç©ºé›†åˆ
+	FD_SET(hSock, &fds); // åŠ å…¥é›†åˆ
 
 	return  select(hSock+1, NULL, &fds, NULL, &tm);
 }
@@ -334,7 +334,7 @@ void OS_TcpSocket::Close()
 	}
 }
 
-// ·şÎñÆ÷
+// æœåŠ¡å™¨
 int OS_TcpSocket::Listen(int backlog)
 {
 	if(socket_listen(hSock, backlog) < 0)
@@ -366,7 +366,7 @@ int OS_TcpSocket::Accept(OS_TcpSocket* peer)
 	return 0;
 }
 
-// ¿Í»§¶Ë
+// å®¢æˆ·ç«¯
 int OS_TcpSocket::Connect(const OS_SockAddr& addr)
 {
 	if(socket_connect(hSock, (sockaddr*) &addr, sizeof(sockaddr)) < 0)
@@ -376,17 +376,17 @@ int OS_TcpSocket::Connect(const OS_SockAddr& addr)
 	return 0;
 }
 
-// ·¢ËÍ½ÓÊÕ
+// å‘é€æ¥æ”¶
 int OS_TcpSocket::Send(const void* buf, int len)
 {
-	// ·¢ËÍ
+	// å‘é€
 	int n = socket_send(hSock, (const char*) buf, len, 0);
 	return n;
 }
 
 int OS_TcpSocket::Recv(void* buf, int len, int waitall)
 {
-	// ½ÓÊÕ
+	// æ¥æ”¶
 	int flags = waitall ? MSG_WAITALL : 0;
 
 	int n = socket_recv(hSock, (char*) buf, len, flags);
@@ -414,7 +414,7 @@ int OS_UdpSocket::Open(const OS_SockAddr& addr, bool reuse)
 		return -1;
 	}
 
-	// °ó¶¨¶Ë¿Ú
+	// ç»‘å®šç«¯å£
 	if (socket_bind(hSock, (sockaddr*) &addr, sizeof(sockaddr)) < 0)
 	{
 		socket_close(hSock);
@@ -449,7 +449,7 @@ int OS_UdpSocket::SendTo(const void* buf, int len, const OS_SockAddr& peer)
 
 int OS_UdpSocket::RecvFrom( void* buf, int max_len, OS_SockAddr& peer)
 {
-	// ½ÓÊÕÊı¾İ
+	// æ¥æ”¶æ•°æ®
 	socklen_t  addr_len = sizeof(sockaddr_in);
 	int n = socket_recvfrom(hSock, (char*) buf, max_len, 0, (sockaddr*) &peer, &addr_len);
 	if(n < 0)
@@ -480,7 +480,7 @@ int OS_McastSock::Open(const char* mcast_ip, int port, const char* local_ip)
 		return -1;
 	}
 
-	// Ò»¶¨ĞèÒª
+	// ä¸€å®šéœ€è¦
 	if(SetOpt_ReuseAddr(true) < 0)
 	{
 		socket_close(hSock);
@@ -488,7 +488,7 @@ int OS_McastSock::Open(const char* mcast_ip, int port, const char* local_ip)
 		return -1;
 	}
 
-	// °ó¶¨ip
+	// ç»‘å®šip
 	sockaddr_in addr;
 	addr.sin_family = AF_INET;
 #ifdef _WIN32
@@ -504,7 +504,7 @@ int OS_McastSock::Open(const char* mcast_ip, int port, const char* local_ip)
 		return -1;
 	}
 
-	// ×¢²á×é²¥
+	// æ³¨å†Œç»„æ’­
 
 	m_McReq.imr_multiaddr.s_addr = inet_addr(mcast_ip); 
 	m_McReq.imr_interface.s_addr = inet_addr(local_ip); 
@@ -518,7 +518,7 @@ int OS_McastSock::Open(const char* mcast_ip, int port, const char* local_ip)
 	return 0;
 }
 
-// socket¹Ø±ÕÊ±×Ô¶¯ÍË³ö×é²¥×é
+// socketå…³é—­æ—¶è‡ªåŠ¨é€€å‡ºç»„æ’­ç»„
 void OS_McastSock::Close()
 {
 	if((int)hSock >= 0)
@@ -545,7 +545,7 @@ int OS_McastSock::SendTo(const void* buf, int len, const OS_SockAddr& peer)
 
 int OS_McastSock::RecvFrom( void* buf, int max_len, OS_SockAddr& peer)
 {
-	// ½ÓÊÕÊı¾İ
+	// æ¥æ”¶æ•°æ®
 	socklen_t  addr_len = sizeof(sockaddr_in);
 	int n = socket_recvfrom(hSock, (char*) buf, max_len, 0, (sockaddr*) &peer, &addr_len);
 	if(n < 0)

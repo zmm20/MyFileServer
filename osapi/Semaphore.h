@@ -15,7 +15,7 @@ public:
 	void Post();
 
 private:
-	int Init(int initial_value=1); // ´´½¨
+	int Init(int initial_value=1); // åˆ›å»º
 
 private:
 	void* m_Priv;

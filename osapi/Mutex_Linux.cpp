@@ -33,7 +33,7 @@ int OS_Mutex::Init()
 	if(!priv) return -1;
 	m_Priv = priv;
 
-	// ´´½¨mutex
+	// åˆ›å»ºmutex
 	if(pthread_mutex_init(&priv->hMutex, NULL) < 0)
 	{
 		delete priv;

@@ -9,7 +9,7 @@
 
 
 #ifdef _WIN32
-// windows ÏÂµÄsocket¶¨Òå
+// windows ä¸‹çš„socketå®šä¹‰
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
@@ -19,7 +19,7 @@ typedef SOCKET socket_t;
 #define socket_close closesocket
 #define socket_ioctl  ioctlsocket
 #else
-// linuxÏÂµÄsocket¶¨Òå
+// linuxä¸‹çš„socketå®šä¹‰
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -49,19 +49,19 @@ typedef int socket_t;
 #define socket_getsockopt getsockopt
 
 /* OS_Socket:
-	*) ÕâÊÇÒ»¸ö¼òµ¥Àà£¬ÓÃ»§¿ÉÒÔÖ±½Ó¸³Öµ´«µİ
-	*) ÓÃ»§Ó¦¸ÃÏÔÊ½µÄ¹Ø±ÕClose()£¬ÔÚÎö¹¹º¯ÊıÀï²»»á×Ô¶¯¹Ø±Õ
-	*) ÓÃ»§¿ÉÒÔÖ±½Ó²Ù×÷socket handle: hSock
+	*) è¿™æ˜¯ä¸€ä¸ªç®€å•ç±»ï¼Œç”¨æˆ·å¯ä»¥ç›´æ¥èµ‹å€¼ä¼ é€’
+	*) ç”¨æˆ·åº”è¯¥æ˜¾å¼çš„å…³é—­Close()ï¼Œåœ¨ææ„å‡½æ•°é‡Œä¸ä¼šè‡ªåŠ¨å…³é—­
+	*) ç”¨æˆ·å¯ä»¥ç›´æ¥æ“ä½œsocket handle: hSock
 */
 
-/* ¿ÉÒÔÖ±½ÓÇ¿×ª³Ésockaddr_in½á¹¹*/
+/* å¯ä»¥ç›´æ¥å¼ºè½¬æˆsockaddr_inç»“æ„*/
 class OS_SockAddr
 {
 public:
 	explicit OS_SockAddr();
 	explicit OS_SockAddr(const char* ip, unsigned short port);
-	explicit OS_SockAddr(const char* ip); // Ä¬ÈÏ¶Ë¿ÚÎª0
-	explicit OS_SockAddr(unsigned short port); // Ä¬ÈÏIPÎª0.0.0.0
+	explicit OS_SockAddr(const char* ip); // é»˜è®¤ç«¯å£ä¸º0
+	explicit OS_SockAddr(unsigned short port); // é»˜è®¤IPä¸º0.0.0.0
 	explicit OS_SockAddr(sockaddr_in addr);
 
 	void SetIp(const char* ip);
@@ -81,13 +81,13 @@ class OS_Socket
 public:
 	OS_Socket(); 
 
-	// ms=0Ê±ÓÀ²»³¬Ê±, µ¥Î»ms, ms=1¿ÉÒÔÈÏÎªÊÇÁ¢¼´·µ»Ø(1msºÜ¿ìÍê³É)
+	// ms=0æ—¶æ°¸ä¸è¶…æ—¶, å•ä½ms, ms=1å¯ä»¥è®¤ä¸ºæ˜¯ç«‹å³è¿”å›(1mså¾ˆå¿«å®Œæˆ)
 	int SetOpt_RecvTimeout(int ms); 
 	int SetOpt_SendTimeout(int ms);
 	int GetOpt_RecvTimeout(); 
 	int GetOpt_SendTimeout();
 
-	// ÉèÖÃ£¨£¯»ñµÃ£©·¢ËÍ£¨£¯½ÓÊÕ£©»º³åÇø´óĞ¡ added by ÖÜÂúÂú
+	// è®¾ç½®ï¼ˆï¼è·å¾—ï¼‰å‘é€ï¼ˆï¼æ¥æ”¶ï¼‰ç¼“å†²åŒºå¤§å° added by å‘¨æ»¡æ»¡
     int SetOpt_RecvBufSize(int bufsize);
     int SetOpt_SendBufSize(int bufsize);
     int GetOpt_RecvBufSize(int* bufsize);
@@ -99,13 +99,13 @@ public:
 	int GetPeerAddr(OS_SockAddr& addr) const;
 	int GetLocalAddr(OS_SockAddr& addr) const;
 
-	// select»úÖÆ:²éÑ¯¶ÁĞ´×´Ì¬
-	// ·µ»ØÖµ: >0£¬±íÊ¾¿ÉÒÔ¶Á»òĞ´ =0±íÊ¾³¬Ê±£¬<0±íÊ¾socket²»¿ÉÓÃ
+	// selectæœºåˆ¶:æŸ¥è¯¢è¯»å†™çŠ¶æ€
+	// è¿”å›å€¼: >0ï¼Œè¡¨ç¤ºå¯ä»¥è¯»æˆ–å†™ =0è¡¨ç¤ºè¶…æ—¶ï¼Œ<0è¡¨ç¤ºsocketä¸å¯ç”¨
 	int Select_ForReading(int timeout);
 	int Select_ForWriting(int timeout);
 
 public:
-	socket_t hSock; // ¿ÉÒÔÖ±½Ó·ÃÎÊÕâ¸öhandle
+	socket_t hSock; // å¯ä»¥ç›´æ¥è®¿é—®è¿™ä¸ªhandle
 };
 
 class OS_TcpSocket : public OS_Socket
@@ -116,14 +116,14 @@ public:
 
 	void Close();
 
-	// ·şÎñÆ÷
+	// æœåŠ¡å™¨
 	int Listen(int backlog = 16);
 	int Accept(OS_TcpSocket* peer);
 	
-	// ¿Í»§¶Ë
+	// å®¢æˆ·ç«¯
 	int Connect(const OS_SockAddr& addr);
 
-	// ·¢ËÍ½ÓÊÕ
+	// å‘é€æ¥æ”¶
 	int Send(const void* buf, int len);
 	int Recv(void* buf, int len, int waitall=0);
 
@@ -140,7 +140,7 @@ public:
 	int SendTo(const void* buf, int len, const OS_SockAddr&  peers);
 	int RecvFrom( void* buf, int max_len, OS_SockAddr& peer);
     
-    // ÉèÖÃ¹ã²¥¿ª¹Ø£¬ add by ÖÜÂúÂú
+    // è®¾ç½®å¹¿æ’­å¼€å…³ï¼Œ add by å‘¨æ»¡æ»¡
     int SetOpt_Broadcast(bool isOpen);
 };
 
@@ -150,7 +150,7 @@ public:
 	int Open(const char* mcast_ip, int port, const char* local_ip);
 	void Close();
 
-	/* ·¢ËÍ¶à²¥Ê±£¬Ê¹ÓÃÆÕÍ¨UdpSock + ¶à²¥Â·ÓÉ¼´¿É */
+	/* å‘é€å¤šæ’­æ—¶ï¼Œä½¿ç”¨æ™®é€šUdpSock + å¤šæ’­è·¯ç”±å³å¯ */
 	//int SendTo(const void* buf, int len, const OS_SockAddr& peer);
 	int RecvFrom( void* buf, int max_len, OS_SockAddr& peer);
 
