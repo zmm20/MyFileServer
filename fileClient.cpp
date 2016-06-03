@@ -29,7 +29,9 @@ int ZSendFileThread::Routine()
 
 	const int DATAMAX = 1024;
 	unsigned long long fileLength;
-	unsigned char buf[DATAMAX];
+	//ä¹‹å‰æ˜¯å£°æ˜æˆé™æ€æ•°ç»„çš„ï¼Œ ä½†æ˜¯ç¨‹åºä¸å®šæ—¶çš„æŠ¥é”™ï¼Œ æ”¹æˆåŠ¨æ€å°±æ²¡é—®é¢˜äº†ã€‚æˆ‘æƒ³å¯èƒ½æ˜¯å±€éƒ¨å˜é‡å­˜å‚¨åœ¨æ ˆåŒºï¼Œè€Œæ ˆåŒºå£°è¯·çš„å†…å­˜å¤ªå¤§ä¼šæº¢å‡ºï¼ˆä¼šæœ‰5ä¸ªçº¿ç¨‹åŒæ—¶è¿è¡Œï¼‰
+	//ç»æŸ¥æ‰¾èµ„æ–™ï¼Œ æ“ä½œç³»ç»Ÿçš„æ ˆä¸€èˆ¬å°±1ï½4Mè€Œå·²
+	unsigned char *buf = new unsigned char[DATAMAX]; 
 
 	ZFilePackage pkg;
 	int rt;
@@ -40,12 +42,12 @@ int ZSendFileThread::Routine()
 		if (bFirst)
 		{
 			rt = m_quefileURI.pop(fileURI);
-			if (rt == 0) // Èç¹û¶ÓÁĞÖĞµÄÎÄ¼ş¸öÊıÎª0£¬Ôò½áÊøÑ­»·
+			if (rt == 0) // å¦‚æœé˜Ÿåˆ—ä¸­çš„æ–‡ä»¶ä¸ªæ•°ä¸º0ï¼Œåˆ™ç»“æŸå¾ªç¯
 				break;
 			filename = getFileName(fileURI);
 			pFile = fopen(fileURI.c_str(), "rb");
 
-			// ÎÄ¼ş´óĞ¡
+			// æ–‡ä»¶å¤§å°
 			fseek(pFile, 0, SEEK_END);
 			fileLength = ftell(pFile);
 			fseek(pFile, 0, SEEK_SET);
@@ -65,7 +67,7 @@ int ZSendFileThread::Routine()
 		{
 			if (1.0 * (pkg.currentpos - trackProgree) / fileLength * 100 > 1.0
 				|| pkg.currentpos == fileLength)
-			{// µ±Íê³É´óÓÚ1%Ê±ºò²Åµ÷ÓÃÒ»´Î½ø¶È£¬·ñÔòÌ«Æµ·±ÁË
+			{// å½“å®Œæˆå¤§äº1%æ—¶å€™æ‰è°ƒç”¨ä¸€æ¬¡è¿›åº¦ï¼Œå¦åˆ™å¤ªé¢‘ç¹äº†
 				m_pFileClient->OnProgress(filename, fileLength, pkg.currentpos, m_pFileClient->m_userData);
 				trackProgree = pkg.currentpos;
 			}
@@ -74,7 +76,7 @@ int ZSendFileThread::Routine()
 		memset(buf, 0, DATAMAX);
 		int n = fread(buf, 1, DATAMAX, pFile);
 		if (n == 0)
-		{// ËµÃ÷ÒÑ¾­Íê³ÉÒ»¸öÎÄ¼şµÄÉÏ´«
+		{// è¯´æ˜å·²ç»å®Œæˆä¸€ä¸ªæ–‡ä»¶çš„ä¸Šä¼ 
 			pkg.code = 1;
 			pkg.datalength = 0;
 			pkg.Serialize();
@@ -90,9 +92,9 @@ int ZSendFileThread::Routine()
 			fclose(pFile);
             pFile = NULL;
 
-			// ¿ªÊ¼ÏÂÒ»¸öÎÄ¼ş
+			// å¼€å§‹ä¸‹ä¸€ä¸ªæ–‡ä»¶
 			bFirst = true;
-			OS_Thread::Msleep(10); // ¼õÉÙ¶ª°ü¸ÅÂÊ
+			OS_Thread::Msleep(10); // å‡å°‘ä¸¢åŒ…æ¦‚ç‡
 			continue;
 		}
 		else
@@ -103,7 +105,7 @@ int ZSendFileThread::Routine()
 		pkg.data = buf;
 		pkg.datalength = n;
 
-		// ·¢ËÍ
+		// å‘é€
 		pkg.Serialize();
         rt = m_sock.SendTo(pkg.GetBuffer(), pkg.GetSize(), PeerAddr);
         if (rt == -1)
@@ -123,17 +125,19 @@ int ZSendFileThread::Routine()
 		else
 		{
 			if (pkg.UnSerialize(buf, n) && pkg.code == -1)
-			{// ËµÃ÷µ±Ç°ÉÏ´«ÎÄ¼ş·¢Éú´íÎó
+			{// è¯´æ˜å½“å‰ä¸Šä¼ æ–‡ä»¶å‘ç”Ÿé”™è¯¯
 				fclose(pFile);
                 pFile = NULL;
 
-				bFirst = true; // ¿ªÊ¼ĞÂµÄÎÄ¼şÉÏ´«
+				bFirst = true; // å¼€å§‹æ–°çš„æ–‡ä»¶ä¸Šä¼ 
 				printf("error code = %d, msg = %s\n", pkg.code, pkg.msg.c_str());
 				continue;
 			}
 		}
 		
 	}
+
+	delete[] buf;
 
     if (pFile)
         fclose(pFile);
@@ -145,7 +149,7 @@ int ZSendFileThread::Routine()
 ZUDPFileClient::ZUDPFileClient(int port) : ZFileClient(port)
 {
 	for (int i = 0; i < 5; ++i)
-	{// ×¼±¸5¸öÏß³Ì¶ÔÏó
+	{// å‡†å¤‡5ä¸ªçº¿ç¨‹å¯¹è±¡
         ZSendFileThread* sendThread = new ZSendFileThread(this, m_queFileURI, port + i);
 		m_vecSendTread.push_back(sendThread);
 	}
