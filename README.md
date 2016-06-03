@@ -73,17 +73,17 @@ vs2008只能用版本1.0.0以下的版本，xcode倒是支持最新版本。所�
 
 
 #3》对文件上传、下载等相关行为的设计：
-   ZFileClient 基本用法：
-   ZFileClient* fs = new ZUDPFileClient(self_port); // 如果是TCP，则new ZTCPFileServer(self_port)
-   fs->connect(peer_ip, peer_port); // 目的是与Tcp／ip 接口统一
-   fs->regeditProgress(...); //注册进度显示函数
-   fs->setFileList(...);
-   fs->upload();
-
-   ZFileServer 基本用法
-   ZFileClient* fc = new ZUDPFileServer(self_port); // 如果是TCP，则new ZTCPFileClient(self_port)
-   fc->setPath(...); // 设置路径
-   fc->start();
+    ZFileClient 基本用法：
+    ZFileClient* fs = new ZUDPFileClient(self_port); // 如果是TCP，则new ZTCPFileServer(self_port)
+    fs->connect(peer_ip, peer_port); // 目的是与Tcp／ip 接口统一
+    fs->regeditProgress(...); //注册进度显示函数
+    fs->setFileList(...);
+    fs->upload();
+    
+    ZFileServer 基本用法
+    ZFileClient* fc = new ZUDPFileServer(self_port); // 如果是TCP，则new ZTCPFileClient(self_port)
+    fc->setPath(...); // 设置路径
+    fc->start();
 
 #4》对广播对象行为的设计：
     ZBroadcastServer bs(broadcastPort);
