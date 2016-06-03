@@ -87,6 +87,12 @@ public:
 	int GetOpt_RecvTimeout(); 
 	int GetOpt_SendTimeout();
 
+	// 设置（／获得）发送（／接收）缓冲区大小 added by 周满满
+    int SetOpt_RecvBufSize(int bufsize);
+    int SetOpt_SendBufSize(int bufsize);
+    int GetOpt_RecvBufSize(int* bufsize);
+    int GetOpt_SendBufSize(int* bufsize);
+
 	int Ioctl_SetBlockedIo(bool blocked);
 	int SetOpt_ReuseAddr(bool reuse);
 

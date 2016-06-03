@@ -187,6 +187,43 @@ int OS_Socket::GetOpt_SendTimeout()
 #endif
 }
 
+
+int OS_Socket::SetOpt_RecvBufSize(int bufsize)
+{
+    if (setsockopt(hSock, SOL_SOCKET, SO_RCVBUF, (const char*)&bufsize,sizeof(int)) < 0)
+    {
+        return -1;
+    }
+    return 0;
+}
+int OS_Socket::SetOpt_SendBufSize(int bufsize)
+{
+    if (setsockopt(hSock, SOL_SOCKET, SO_SNDBUF, (const char*)&bufsize,sizeof(int)) < 0)
+    {
+        return -1;
+    }
+    return 0;
+}
+int OS_Socket::GetOpt_RecvBufSize(int* bufsize)
+{
+    socklen_t len = sizeof(socklen_t);
+    if (getsockopt(hSock, SOL_SOCKET, SO_RCVBUF, (char*)bufsize, &len) < 0)
+    {
+        return -1;
+    }
+    return 0;
+}
+int OS_Socket::GetOpt_SendBufSize(int* bufsize)
+{
+    socklen_t len = sizeof(socklen_t);
+    if (getsockopt(hSock, SOL_SOCKET, SO_SNDBUF, (char*)bufsize, &len) < 0)
+    {
+        return -1;
+    }
+    
+    return 0;
+}
+
 int OS_Socket::Ioctl_SetBlockedIo(bool blocked)
 {
 	unsigned   long   args =  blocked ? 0: 1;
