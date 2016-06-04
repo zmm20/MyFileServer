@@ -52,93 +52,102 @@ typedef int socket_t;
 	*) 这是一个简单类，用户可以直接赋值传递
 	*) 用户应该显式的关闭Close()，在析构函数里不会自动关闭
 	*) 用户可以直接操作socket handle: hSock
-*/
+ */
 
 /* 可以直接强转成sockaddr_in结构*/
 class OS_SockAddr
 {
 public:
-	explicit OS_SockAddr();
-	explicit OS_SockAddr(const char* ip, unsigned short port);
-	explicit OS_SockAddr(const char* ip); // 默认端口为0
-	explicit OS_SockAddr(unsigned short port); // 默认IP为0.0.0.0
-	explicit OS_SockAddr(sockaddr_in addr);
-
-	void SetIp(const char* ip);
-	void SetIp(unsigned int ip);
-	void SetPort(unsigned short port);
-
-	std::string GetIp_str() const;
-	unsigned int GetIp_n() const;
-	unsigned short GetPort() const;
-
+    explicit OS_SockAddr();
+    explicit OS_SockAddr(const char* ip, unsigned short port);
+    explicit OS_SockAddr(const char* ip); // 默认端口为0
+    explicit OS_SockAddr(unsigned short port); // 默认IP为0.0.0.0
+    explicit OS_SockAddr(sockaddr_in addr);
+    
+    void SetIp(const char* ip);
+    void SetIp(unsigned int ip);
+    void SetPort(unsigned short port);
+    
+    std::string GetIp_str() const;
+    unsigned int GetIp_n() const;
+    unsigned short GetPort() const;
+    
 public:
-	sockaddr_in iAddr;
+    sockaddr_in iAddr;
 };
 
 class OS_Socket
 {
 public:
-	OS_Socket(); 
-
-	// ms=0时永不超时, 单位ms, ms=1可以认为是立即返回(1ms很快完成)
-	int SetOpt_RecvTimeout(int ms); 
-	int SetOpt_SendTimeout(int ms);
-	int GetOpt_RecvTimeout(); 
-	int GetOpt_SendTimeout();
-
-	// 设置（／获得）发送（／接收）缓冲区大小 added by 周满满
+    OS_Socket();
+    
+    // ms=0时永不超时, 单位ms, ms=1可以认为是立即返回(1ms很快完成)
+    int SetOpt_RecvTimeout(int ms);
+    int SetOpt_SendTimeout(int ms);
+    int GetOpt_RecvTimeout();
+    int GetOpt_SendTimeout();
+    
+    // 设置（／获得）发送（／接收）缓冲区大小 added by 周满满
     int SetOpt_RecvBufSize(int bufsize);
     int SetOpt_SendBufSize(int bufsize);
     int GetOpt_RecvBufSize(int* bufsize);
     int GetOpt_SendBufSize(int* bufsize);
-
-	int Ioctl_SetBlockedIo(bool blocked);
-	int SetOpt_ReuseAddr(bool reuse);
-
-	int GetPeerAddr(OS_SockAddr& addr) const;
-	int GetLocalAddr(OS_SockAddr& addr) const;
-
-	// select机制:查询读写状态
-	// 返回值: >0，表示可以读或写 =0表示超时，<0表示socket不可用
-	int Select_ForReading(int timeout);
-	int Select_ForWriting(int timeout);
-
+    
+    int Ioctl_SetBlockedIo(bool blocked);
+    int SetOpt_ReuseAddr(bool reuse);
+    
+    int GetPeerAddr(OS_SockAddr& addr) const;
+    int GetLocalAddr(OS_SockAddr& addr) const;
+    
+    // select机制:查询读写状态
+    // 返回值: >0，表示可以读或写 =0表示超时，<0表示socket不可用
+    int Select_ForReading(int timeout);
+    int Select_ForWriting(int timeout);
+    
 public:
-	socket_t hSock; // 可以直接访问这个handle
+    socket_t hSock; // 可以直接访问这个handle
 };
 
 class OS_TcpSocket : public OS_Socket
 {
 public:
-	int Open(bool resue = false);
-	int Open(const OS_SockAddr& addr , bool reuse = false);
-
-	void Close();
-
-	// 服务器
-	int Listen(int backlog = 16);
-	int Accept(OS_TcpSocket* peer);
-	
-	// 客户端
-	int Connect(const OS_SockAddr& addr);
-
-	// 发送接收
-	int Send(const void* buf, int len);
-	int Recv(void* buf, int len, int waitall=0);
-
+    int Open(bool resue = false);
+    int Open(const OS_SockAddr& addr , bool reuse = false);
+    
+    void Close();
+    
+    // 服务器
+    int Listen(int backlog = 16);
+    int Accept(OS_TcpSocket* peer);
+    int Accept(OS_TcpSocket* peer, OS_SockAddr* peerAddr);
+    
+    // 客户端
+    int Connect(const OS_SockAddr& addr);
+    
+    // 发送接收
+    int Send(const void* buf, int len);
+    int Recv(void* buf, int len, int waitall=0);
+    
+    // added by 周满满
+    // 接收指定长度的字节数据
+    // count: 准备接收多少字节
+    // realCount: 实际读取的字节数量
+    // timeout: 如果为0，表示阻塞等待，否则，表示设置接收超时
+    // 返回值同Recv
+    int WaitBytes(void* buf, int count, /*out*/ int& realCount, int timeout = 0);
+    
 };
 
 class OS_UdpSocket : public OS_Socket
 {
 public:
-	int Open(bool resue = false);
-	int Open(const OS_SockAddr& addr,  bool reuse = false);
-
-	void Close();
-
-	int SendTo(const void* buf, int len, const OS_SockAddr&  peers);
-	int RecvFrom( void* buf, int max_len, OS_SockAddr& peer);
+    int Open(bool resue = false);
+    int Open(const OS_SockAddr& addr,  bool reuse = false);
+    
+    void Close();
+    
+    int SendTo(const void* buf, int len, const OS_SockAddr&  peers);
+    int RecvFrom( void* buf, int max_len, OS_SockAddr& peer);
     
     // 设置广播开关， add by 周满满
     int SetOpt_Broadcast(bool isOpen);
@@ -147,15 +156,15 @@ public:
 class OS_McastSock : public OS_Socket
 {
 public:
-	int Open(const char* mcast_ip, int port, const char* local_ip);
-	void Close();
-
-	/* 发送多播时，使用普通UdpSock + 多播路由即可 */
-	//int SendTo(const void* buf, int len, const OS_SockAddr& peer);
-	int RecvFrom( void* buf, int max_len, OS_SockAddr& peer);
-
+    int Open(const char* mcast_ip, int port, const char* local_ip);
+    void Close();
+    
+    /* 发送多播时，使用普通UdpSock + 多播路由即可 */
+    //int SendTo(const void* buf, int len, const OS_SockAddr& peer);
+    int RecvFrom( void* buf, int max_len, OS_SockAddr& peer);
+    
 private:
-	ip_mreq m_McReq;
+    ip_mreq m_McReq;
 };
 
 #endif

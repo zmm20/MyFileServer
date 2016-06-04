@@ -8,9 +8,10 @@
 #ifndef FILE_PACKAGE_H
 #define FILE_PACKAGE_H
 
-#include "json/json.h" // '/' 斜杠各平台通用
 #include <string>
 #include <assert.h>
+#include "json/json.h" // '/' 斜杠各平台通用
+#include "afutil/Endian.h"
 
 // 格式分解
 //  发送时：
@@ -39,6 +40,7 @@
 //  }
 
 class ZFilePackage{
+    bool m_isUdp;
     int m_size;
     std::string m_headBuffer;//
     unsigned char* m_totalBuffer;
@@ -63,7 +65,7 @@ public:
     // data部分
     unsigned char* data;
 public:
-    ZFilePackage() : m_size(0), msgId(0), m_totalBuffer(NULL), data(NULL){}
+    ZFilePackage(bool isUdp = true) : m_isUdp(isUdp), m_size(0), msgId(0), m_totalBuffer(NULL), data(NULL){}
     ~ZFilePackage()
     {
         if (m_totalBuffer)
@@ -76,9 +78,9 @@ public:
     void Serialize()
     {
         Json::Value item;
-        item["msgId"]	   = msgId;
-        item["code"]	   = code;
-        item["msg"]		   = msg.c_str();
+        item["msgId"]      = msgId;
+        item["code"]       = code;
+        item["msg"]        = msg.c_str();
         item["command"]    = (int)cmd;
         item["currentpos"] = currentpos;
         item["filename"]   = filename.c_str();
@@ -86,28 +88,42 @@ public:
         
         m_headBuffer =  item.toStyledString();
         m_size = m_headBuffer.size() + datalength;
+        if (!m_isUdp)// 如果是tcp/ip协议，则最前面4个字节表示head + data的长度
+            m_size += 4;
         
         if (m_totalBuffer)
-        {
             delete[] m_totalBuffer;
-        }
         m_totalBuffer = new unsigned char[m_size];
         memset(m_totalBuffer, 0, m_size);
-        memcpy(m_totalBuffer, m_headBuffer.c_str(), m_headBuffer.size());
         
+        
+        int offset = 0;
+        if (!m_isUdp)
+        {// 把head的长度写入缓存
+            itob_32be((unsigned int)(m_size - 4), m_totalBuffer);
+            offset += 4;
+        }
+        
+        // 把head内容写入缓存
+        memcpy(m_totalBuffer + offset, m_headBuffer.c_str(), m_headBuffer.size());
+        offset += m_headBuffer.size();
+        
+        // 把data写入缓存
         if (data != NULL && datalength > 0)
-            memcpy(m_totalBuffer + m_headBuffer.size(), data, datalength);
+            memcpy(m_totalBuffer + offset, data, datalength);
     }
     
-    void UnSerialize(unsigned char* buf, int buflen)
-    {
+    bool UnSerialize(unsigned char* buf, int buflen)
+    {// 如果是TCP包， 这里的buf应该是去除前4个字节
         Json::Reader reader;
         Json::Value root;
-        reader.parse((char*)buf, root);
+        bool bRet = reader.parse((char*)buf, root);
+        if (!bRet)
+            return bRet;
         
         msgId      =  root["msgId"].asInt();
-        code	   =  root["code"].asInt();
-        msg 	   =  root["msg"].asString();
+        code       =  root["code"].asInt();
+        msg        =  root["msg"].asString();
         cmd = (Comand)root["command"].asInt();
         currentpos =  root["currentpos"].asUInt64();
         filelength =  root["filelength"].asUInt64();
@@ -119,6 +135,8 @@ public:
         
         if (datalength > 0)
             data = buf + m_headBuffer.size();
+        
+        return bRet;
     }
     unsigned char* GetBuffer()
     {

@@ -22,9 +22,9 @@ typedef AfMsgQueue<std::string>  MsgQueue;
 // ZSendFileThread定义
 class ZSendFileThread : public OS_Thread
 {
-    bool m_bEnd;
+	bool m_bEnd;
 	OS_UdpSocket m_sock;
-    OS_SockAddr m_selfAddr;
+	OS_SockAddr m_selfAddr;
 
 	// 下面3个变量都是从其他地方传进来的
 	ZFileClient* m_pFileClient;
@@ -33,27 +33,27 @@ private:
 	std::string getFileName(std::string fileURI);
 	int Routine();
 public:
-    static OS_SockAddr PeerAddr;
+	static OS_SockAddr PeerAddr;
 public:
-    ZSendFileThread(ZFileClient* pFileClient, MsgQueue& quefileURI, int port)
-        : m_pFileClient(pFileClient), m_quefileURI(quefileURI), m_selfAddr(port)
-    {
-    }
-    ~ZSendFileThread(){}
-    void start()
-    {
-        m_bEnd = false;
-        m_sock.Open(m_selfAddr, true);
-        Run();
-    }
+	ZSendFileThread(ZFileClient* pFileClient, MsgQueue& quefileURI, int port)
+		: m_pFileClient(pFileClient), m_quefileURI(quefileURI), m_selfAddr(port)
+	{
+	}
+	~ZSendFileThread(){}
+	void start()
+	{
+		m_bEnd = false;
+		m_sock.Open(m_selfAddr, true);
+		Run();
+	}
 
-    void end()
-    {
-        m_bEnd = true;
-        m_sock.Close();
+	void end()
+	{
+		m_bEnd = true;
+		m_sock.Close();
 
-        OS_Thread::Join(this);
-    }
+		OS_Thread::Join(this);
+	}
 };
 
 
@@ -71,7 +71,7 @@ public:
 	ZFileClient(int port) : m_selfPort(port), m_queFileURI(100), OnProgress(NULL)
 	{
 	}
-    virtual ~ZFileClient(){}
+	virtual ~ZFileClient(){}
 
 	void setFileList(std::string fileURIList[], int nCount)
 	{
@@ -79,7 +79,7 @@ public:
 		{
 			m_queFileURI.push(fileURIList[i]);
 		}
-		
+
 	}
 	void regeditProgress(FOnProgress fun_onProgress, void* userData)
 	{
@@ -98,6 +98,19 @@ class ZUDPFileClient : public ZFileClient
 public:
 	ZUDPFileClient(int port);
 	~ZUDPFileClient();
+
+	bool connect(std::string peer_ip, int peer_port);
+	void upload();
+	void stop();
+};
+
+class ZTCPFileClient : public ZFileClient
+{
+	OS_TcpSocket m_sock;
+	std::string getFileName(std::string fileURI);
+public:
+	ZTCPFileClient(int port);
+	~ZTCPFileClient();
 
 	bool connect(std::string peer_ip, int peer_port);
 	void upload();

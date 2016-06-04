@@ -2,8 +2,6 @@
 #define _CRT_SECURE_NO_WARNINGS /* VS2013,2015需要这一行 */
 #include <stdio.h>
 #include <string.h>
-#include "osapi\Socket.h"
-#include "FilePackage.h"
 #include "fileClient.h"
 
 
