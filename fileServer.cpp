@@ -9,6 +9,23 @@
 #include "fileServer.h"
 #include "afutil/Endian.h"
 #include "osapi/Thread.h"
+#include "fileManage_s.h"
+
+ZFileServer::ZFileServer(int port) : m_selfPort(port), m_uploadPath("")
+{
+}
+ZFileServer::~ZFileServer()
+{
+    ZFileManage* pFileMange = ZFileManage::getInstance();
+    pFileMange->destroy();
+}
+int ZFileServer::setPath(std::string path)
+{
+    ZFileManage* pFileMange = ZFileManage::getInstance();
+    return pFileMange->setRootDirOfUpload(path);
+}
+
+/********** udp file server *********************************/
 
 ZUDPFileServer::ZUDPFileServer(int port):ZFileServer(port)
 {
@@ -22,7 +39,6 @@ void ZUDPFileServer::start()
     OS_SockAddr local(m_selfPort); // 默认IP：0.0.0.0
     m_sock.Open(local, true);
     
-    m_mapNameFile.clear();
     const int BUFSIZE = 1024 * 2;
     unsigned char* buf = new unsigned char[BUFSIZE];
     OS_SockAddr peer; // 对方的地址
@@ -31,6 +47,7 @@ void ZUDPFileServer::start()
     int iSucceed = 0;
     std::string strTemp;
     std::string errStr;
+    ZFileManage* pFileMange = ZFileManage::getInstance();
     while(1)
     {
         memset(buf, 0, BUFSIZE);
@@ -38,7 +55,7 @@ void ZUDPFileServer::start()
         if(ret == -1)
         {
             printf("RecvFrom error\n");
-            continue;
+            break;
         }
         
         ZFilePackage pkg;
@@ -47,52 +64,27 @@ void ZUDPFileServer::start()
         // 1表示传输结束
         if (pkg.code == 1)
         {
-            MapName_File_t::iterator iFind = m_mapNameFile.find(pkg.filename);
-            FILE* fp = iFind->second;
-            printf("end %s; peer addr:%s:%d\n", iFind->first.c_str(), peer.GetIp_str().c_str(), peer.GetPort());
-            fclose(fp);
-            m_mapNameFile.erase(iFind);
+            pFileMange->endWrite(pkg.filename);
             
+            printf("end %s; peer addr:%s:%d\n", pkg.filename.c_str(), peer.GetIp_str().c_str(), peer.GetPort());
             continue;
-        }
-        
-        if (pkg.currentpos == 0)
-        {
-            strTemp = m_uploadPath + pkg.filename;
-            printf("recieve begin: %s\n", pkg.filename.c_str());
-            
-            FILE* fp = fopen(strTemp.c_str(), "wb");
-            if (fp == NULL)
-            {
-                extern int errno;
-                iSucceed = -1;
-                errStr = errno;
-                errStr += " ";
-                errStr += strerror(errno);
-            }
-            else
-            {
-                m_mapNameFile[pkg.filename] = fp;
-                fwrite(pkg.data, 1, pkg.datalength, fp);
-            }
         }
         else
         {
-            FILE* fp = m_mapNameFile[pkg.filename];
-            fwrite(pkg.data, 1, pkg.datalength, fp);
-        }
-        
-        // 响应客户端
-        pkg.code = iSucceed;
-        pkg.msg  = errStr;
-        pkg.datalength = 0;
-        pkg.data = NULL;
-        pkg.Serialize();
-        ret  = m_sock.SendTo(pkg.GetBuffer(), pkg.GetSize(), peer); // 响应客户端
-        if(ret == -1)
-        {
-            printf("SendTo error\n");
-            continue;
+            iSucceed = pFileMange->write(pkg.filename, pkg.currentpos, pkg.data, pkg.datalength, errStr);
+            
+            // 响应客户端
+            pkg.code = iSucceed;
+            pkg.msg  = errStr;
+            pkg.datalength = 0;
+            pkg.data = NULL;
+            pkg.Serialize();
+            ret  = m_sock.SendTo(pkg.GetBuffer(), pkg.GetSize(), peer);
+            if(ret == -1)
+            {
+                printf("SendTo error\n");
+                break;
+            }
         }
     }
     
@@ -115,13 +107,9 @@ class TcpConn : public OS_Thread
 private:
     OS_SockAddr m_peer;
     OS_TcpSocket m_WorkSock;
-    std::string m_uploadPath;
 public:
-    MapName_File_t m_mapNameFile;
-public:
-    TcpConn(OS_TcpSocket work_sock, std::string& uploadPathRoot, OS_SockAddr& peerAddr)
-        : OS_Thread(), m_WorkSock(work_sock), m_uploadPath(uploadPathRoot)
-        , m_peer(peerAddr){}
+    TcpConn(OS_TcpSocket work_sock, OS_SockAddr& peerAddr)
+        : OS_Thread(), m_WorkSock(work_sock), m_peer(peerAddr){}
     ~TcpConn(){}
     
 private:
@@ -133,10 +121,9 @@ private:
         int ret;
         int iSucceed = 0;
         int realCount;
-        std::string strTemp;
         std::string errStr;
         
-        m_mapNameFile.clear();
+        ZFileManage* pFileMange = ZFileManage::getInstance();
         while(1)
         {
             memset(buf, 0, BUFSIZE);
@@ -173,52 +160,27 @@ private:
             // 1表示传输结束
             if (pkg.code == 1)
             {
-                MapName_File_t::iterator iFind = m_mapNameFile.find(pkg.filename);
-                FILE* fp = iFind->second;
-                printf("end %s\n", iFind->first.c_str());
-                fclose(fp);
-                m_mapNameFile.erase(iFind);
+                pFileMange->endWrite(pkg.filename);
+                printf("end %s\n", pkg.filename.c_str());
                 
                 continue;
             }
-            
-            if (pkg.currentpos == 0)
-            {
-                strTemp = m_uploadPath + pkg.filename;
-                printf("recieve begin: %s\n", pkg.filename.c_str());
-                
-                FILE* fp = fopen(strTemp.c_str(), "wb");
-                if (fp == NULL)
-                {
-                    extern int errno;
-                    iSucceed = -1;
-                    errStr = errno;
-                    errStr += " ";
-                    errStr += strerror(errno);
-                }
-                else
-                {
-                    m_mapNameFile[pkg.filename] = fp;
-                    fwrite(pkg.data, 1, pkg.datalength, fp);
-                }
-            }
             else
             {
-                FILE* fp = m_mapNameFile[pkg.filename];
-                fwrite(pkg.data, 1, pkg.datalength, fp);
-            }
-            
-            // 响应客户端
-            pkg.code = iSucceed;
-            pkg.msg  = errStr;
-            pkg.datalength = 0;
-            pkg.data = NULL;
-            pkg.Serialize();
-            ret  = m_WorkSock.Send(pkg.GetBuffer(), pkg.GetSize()); // 响应客户端
-            if(ret == -1)
-            {
-                printf("Send error\n");
-                break;
+                iSucceed = pFileMange->write(pkg.filename, pkg.currentpos, pkg.data, pkg.datalength, errStr);
+                
+                // 响应客户端
+                pkg.code = iSucceed;
+                pkg.msg  = errStr;
+                pkg.datalength = 0;
+                pkg.data = NULL;
+                pkg.Serialize();
+                ret  = m_WorkSock.Send(pkg.GetBuffer(), pkg.GetSize());
+                if(ret == -1)
+                {
+                    printf("Send error\n");
+                    break;
+                }
             }
         }
         
@@ -266,7 +228,7 @@ void ZTCPFileServer::start()
         printf("connect comming, address: %s:%d\n", peerAddr.GetIp_str().c_str(), peerAddr.GetPort());
         
         // 新建一个线程，处理该client的请求
-        TcpConn* conn = new TcpConn(work_sock, m_uploadPath, peerAddr);
+        TcpConn* conn = new TcpConn(work_sock, peerAddr);
         conn->Run();
         m_vecThread.push_back(conn);
     }

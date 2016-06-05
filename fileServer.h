@@ -17,7 +17,6 @@
 //ZFileClient* fc = new ZUDPFileServer(self_port); // 如果是TCP，则new ZTCPFileClient(self_port)
 //fc->setPath(...); // 设置路径
 //fc->start();
-typedef std::map<std::string, FILE*> MapName_File_t;
 
 class ZFileServer
 {
@@ -26,14 +25,10 @@ protected:
     int m_selfPort;
     std::string m_uploadPath;
 public:
-    ZFileServer(int port) : m_selfPort(port), m_uploadPath(""){}
-    virtual ~ZFileServer(){}
+    ZFileServer(int port);
+    virtual ~ZFileServer();
     
-    void setPath(std::string path)
-    {
-        // 可以做些检查，如果路径不存在，则创建 或提示
-        m_uploadPath = path;
-    }
+    int setPath(std::string path);
     virtual void start() = 0;
     virtual void stop() = 0;
     
@@ -43,7 +38,6 @@ class ZUDPFileServer : public ZFileServer
 {
 private:
     OS_UdpSocket m_sock;
-    MapName_File_t m_mapNameFile;
 public:
     ZUDPFileServer(int port);
     ~ZUDPFileServer();
