@@ -25,6 +25,7 @@ class ZSendFileThread : public OS_Thread
 	bool m_bEnd;
 	OS_UdpSocket m_sock;
 	OS_SockAddr m_selfAddr;
+    static OS_Mutex m_mutex;
 
 	// 下面3个变量都是从其他地方传进来的
 	ZFileClient* m_pFileClient;
