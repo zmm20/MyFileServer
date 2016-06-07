@@ -35,7 +35,7 @@ vs2008只能用版本1.0.0以下的版本，xcode倒是支持最新版本。所�
 #2》文件数据包格式分析：
     通信协议的整个net包划分2个部分：
     －－－－－－－－－－－－－－－－－－－－－－
-    ｜head ｜ data                            ｜
+    ｜head ｜ data                      ｜
     －－－－－－－－－－－－－－－－－－－－－－
     head 数据包的头， 长度不固定，用json格式表示， 以后如果移植到手机，可以改成protobuf格式，节省流量
     data是二进制部分， 头和尾由head确定
@@ -73,14 +73,14 @@ vs2008只能用版本1.0.0以下的版本，xcode倒是支持最新版本。所�
 
 #3》对文件上传、下载等相关行为的设计：
     ZFileClient 基本用法：
-    ZFileClient* fs = new ZUDPFileClient(self_port); // 如果是TCP，则new ZTCPFileServer(self_port)
+    ZFileClient* fs = new ZUDPFileClient(self_ip, self_port); // 如果是TCP，则new ZTCPFileServer(self_ip, self_port)
     fs->connect(peer_ip, peer_port); // 目的是与Tcp／ip 接口统一
     fs->regeditProgress(...); //注册进度显示函数
     fs->setFileList(...);
     fs->upload();
     
     ZFileServer 基本用法
-    ZFileClient* fc = new ZUDPFileServer(self_port); // 如果是TCP，则new ZTCPFileClient(self_port)
+    ZFileClient* fc = new ZUDPFileServer(self_ip, self_port); // 如果是TCP，则new ZTCPFileClient(self_ip, self_port)
     fc->setPath(...); // 设置路径
     fc->start();
 

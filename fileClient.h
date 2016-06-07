@@ -12,7 +12,7 @@
 #define  PORTCOUNT 5; // 定义端口数量
 
 // ZFileClient 基本用法设计：
-// ZFileClient* fs = new ZUDPFileClient(self_port); // 如果是TCP，则new ZTCPFileServer(self_port)
+// ZFileClient* fs = new ZUDPFileClient(self_p, self_port); // 如果是TCP，则new ZTCPFileServer(self_p, self_port)
 // fs->connect(peer_ip, peer_port); // 目的是与Tcp／ip 接口统一
 // fs->regeditProgress(...); //注册进度显示函数
 // fs->setFileList(...);
@@ -63,13 +63,14 @@ class ZFileClient
 	typedef void (*FOnProgress)(const std::string filename, unsigned long long filelength, unsigned long long currentPossion, void* userData);
 protected:
 	int m_selfPort;
+    std::string m_selfIp;
 	OS_SockAddr m_peerAddr;
 	MsgQueue m_queFileURI;
 public:
 	FOnProgress OnProgress;
 	void* m_userData;
 public:
-	ZFileClient(int port) : m_selfPort(port), m_queFileURI(100), OnProgress(NULL)
+    ZFileClient(const char* ip, int port) : m_selfIp(ip), m_selfPort(port), m_queFileURI(100), OnProgress(NULL)
 	{
 	}
 	virtual ~ZFileClient(){}
@@ -97,7 +98,7 @@ class ZUDPFileClient : public ZFileClient
 	typedef std::vector<ZSendFileThread*> VecSendThread;
 	VecSendThread m_vecSendTread;
 public:
-	ZUDPFileClient(int port);
+    ZUDPFileClient(const char* ip, int port);
 	~ZUDPFileClient();
 
 	bool connect(std::string peer_ip, int peer_port);
@@ -110,7 +111,7 @@ class ZTCPFileClient : public ZFileClient
 	OS_TcpSocket m_sock;
 	std::string getFileName(std::string fileURI);
 public:
-	ZTCPFileClient(int port);
+    ZTCPFileClient(const char* ip, int port);
 	~ZTCPFileClient();
 
 	bool connect(std::string peer_ip, int peer_port);

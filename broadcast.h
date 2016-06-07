@@ -17,13 +17,14 @@ class ZBroadcast : public OS_Thread
 protected:
     bool m_end;
     int m_selfPort;
+    std::string m_selfIp;
     FOnRecieved m_onRecieved;
     OS_UdpSocket m_socket;
 
     void* m_userData;// 由用户传入， 再经回调函数原样返回
 public:
-    ZBroadcast(int selfPort)
-        : OS_Thread(), m_selfPort(selfPort)
+    ZBroadcast(const char* selfIp, int selfPort)
+        : OS_Thread(), m_selfIp(selfIp), m_selfPort(selfPort)
         , m_onRecieved(NULL), m_end(false){}
     ~ZBroadcast(){}
     
@@ -33,10 +34,15 @@ public:
         m_userData = userData;
     }
     
+    void setIp(const char* self_ip)
+    {
+        m_selfIp = self_ip;
+    }
+
     int start()
     {
         m_end = false;
-        OS_SockAddr local(m_selfPort);
+        OS_SockAddr local(m_selfIp.c_str(), m_selfPort);
         int ret = m_socket.Open(local, true);
         
         if (ret == - 1)
@@ -46,6 +52,7 @@ public:
         if (ret == -1)
             return -1;
 
+        fprintf(stdout, "broadcast start\n");
         Run();
         return 0;
     }
@@ -54,6 +61,7 @@ public:
         m_end = true;
         m_socket.Close();
         Join(this);
+        fprintf(stdout, "broadcast end\n");
     }
     
     // 客户端的发送函数
@@ -64,7 +72,7 @@ class ZBroadcastServer : public ZBroadcast
 {
     int SendTo(const void *buf, int len, int broadcastPort){return 0;}
 public:
-    ZBroadcastServer(int broadcastPort) : ZBroadcast(broadcastPort){}
+    ZBroadcastServer(const char* broadcastIp, int broadcastPort) : ZBroadcast(broadcastIp, broadcastPort){}
     ~ZBroadcastServer(){}
 private:
     int Routine()
@@ -72,7 +80,7 @@ private:
         int ret;
         // 广播地址
         OS_SockAddr recievedAddr;
-        char buf[1024] = {0};
+        char* buf = new char[1024];
         while(!m_end)
         {
             memset(buf, 0, 1024);
@@ -91,7 +99,8 @@ private:
                 }
             }
         }
-
+        delete[] buf;
+        fprintf(stdout, "thread end\n");
         return 0;
     }
 };
@@ -100,7 +109,8 @@ private:
 class ZBroadcastClient : public ZBroadcast
 {
 public:
-    ZBroadcastClient(int selfPort) : ZBroadcast(selfPort) {}
+    ZBroadcastClient(const char* selfIp, int selfPort)
+        : ZBroadcast(selfIp ,selfPort) {}
     ~ZBroadcastClient(){}
     
     int SendTo(const void *buf, int len, int broadcastPort)
@@ -111,11 +121,12 @@ public:
 private:
     int Routine()
     {
-        char buf[1024];
+        char* buf = new char[1024];
         int ret;
         OS_SockAddr recievedAddr;
         while(!m_end)
         {
+            memset(buf, 0, 1024);
             ret = m_socket.RecvFrom(buf, 1024, recievedAddr);
             if(ret == - 1)
             {
@@ -130,7 +141,8 @@ private:
                 }
             }
         }
-        
+        fprintf(stdout, "thread end\n");
+        delete[] buf;
         return 0;
     }
 };

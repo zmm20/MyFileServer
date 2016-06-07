@@ -14,7 +14,7 @@
 #include "osapi/socket.h"
 #include "filePackage.h"
 //ZFileServer 基本用法设计
-//ZFileClient* fc = new ZUDPFileServer(self_port); // 如果是TCP，则new ZTCPFileClient(self_port)
+//ZFileClient* fc = new ZUDPFileServer(self_ip, self_port); // 如果是TCP，则new ZTCPFileClient(self_ip, self_port)
 //fc->setPath(...); // 设置路径
 //fc->start();
 
@@ -22,10 +22,11 @@ class ZFileServer
 {
 protected:
     bool m_bRunning;
+    std::string m_selfIp;
     int m_selfPort;
     std::string m_uploadPath;
 public:
-    ZFileServer(int port);
+    ZFileServer(const char* self_ip, int port);
     virtual ~ZFileServer();
     
     int setPath(std::string path);
@@ -39,7 +40,7 @@ class ZUDPFileServer : public ZFileServer
 private:
     OS_UdpSocket m_sock;
 public:
-    ZUDPFileServer(int port);
+    ZUDPFileServer(const char* self_ip, int port);
     ~ZUDPFileServer();
     void start();
     void stop();
@@ -52,7 +53,7 @@ private:
     OS_TcpSocket m_sock;
     VectorThread_t m_vecThread;
 public:
-    ZTCPFileServer(int port);
+    ZTCPFileServer(const char* self_ip, int port);
     ~ZTCPFileServer();
     void start();
     void stop();

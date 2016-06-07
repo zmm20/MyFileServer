@@ -3,18 +3,30 @@
 #include <stdio.h>
 #include <string.h>
 #include "fileClient.h"
-
+#include "broadcast.h"
+#define  SERVER_IP	"192.168.1.101"
+#define  ANY_IP		"0.0.0.0"
 
 void OnProgress(const std::string filename, unsigned long long filelength, unsigned long long currentPossion, void* userData);
+
+
 int main()
 {
-	printf("发送方: port=9001 ...\n");
+	bool isUdp = true;
+	std::string selfIp = ANY_IP;
+	printf("发送方: ip = %s port = 9001 protocal = %s...\n", selfIp.c_str(), isUdp ? "udp" : "tcp/ip");
 	
+	
+	ZFileClient* fc;
+	if (isUdp)
+		fc = new ZUDPFileClient(9001);
+	else
+		fc = new ZTCPFileClient(9001);
+
 	std::string fileList[2] = {"Everything.exe", "Everything.rar"};
-	ZFileClient* fc = new ZUDPFileClient(9001);
 	fc->setFileList(fileList, 2);
 	fc->regeditProgress(OnProgress, NULL);
-	fc->connect("192.168.1.101", 9000);
+	fc->connect(SERVER_IP, 9000);
 
 	printf("please enter return key to start");
 	getchar();

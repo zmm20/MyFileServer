@@ -11,7 +11,8 @@
 #include "osapi/Thread.h"
 #include "fileManage_s.h"
 
-ZFileServer::ZFileServer(int port) : m_selfPort(port), m_uploadPath("")
+ZFileServer::ZFileServer(const char* ip, int port) : m_selfIp(ip)
+    ,m_selfPort(port), m_uploadPath("")
 {
 }
 ZFileServer::~ZFileServer()
@@ -27,7 +28,7 @@ int ZFileServer::setPath(std::string path)
 
 /********** udp file server *********************************/
 
-ZUDPFileServer::ZUDPFileServer(int port):ZFileServer(port)
+ZUDPFileServer::ZUDPFileServer(const char* self_ip, int port):ZFileServer(self_ip, port)
 {
 }
 
@@ -191,7 +192,7 @@ private:
 };
 
 
-ZTCPFileServer::ZTCPFileServer(int port) : ZFileServer(port)
+ZTCPFileServer::ZTCPFileServer(const char* self_ip, int port) : ZFileServer(self_ip, port)
 {
     m_vecThread.clear();
 }

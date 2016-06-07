@@ -150,7 +150,7 @@ int ZSendFileThread::Routine()
 }
 
 
-ZUDPFileClient::ZUDPFileClient(int port) : ZFileClient(port)
+ZUDPFileClient::ZUDPFileClient(const char* ip, int port) : ZFileClient(ip, port)
 {
 	for (int i = 0; i < 5; ++i)
 	{// 准备5个线程对象
@@ -201,7 +201,7 @@ void ZUDPFileClient::stop()
 }
 
 
-ZTCPFileClient::ZTCPFileClient(int port) : ZFileClient(port)
+ZTCPFileClient::ZTCPFileClient(const char* ip, int port) : ZFileClient(ip, port)
 {
 	OS_SockAddr local(m_selfPort);
 	m_sock.Open(local, true);
